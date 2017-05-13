@@ -19,10 +19,14 @@ module Bot
         next if event.channel.id == 83917313761378304
         user_id = get_user_id event
         user = get_user user_id
+        author = get_user event.message.author.id
         if event.message.mentions.blank?
           "**Hands <@#{user_id}> a wooden stake and a hammer**"
         else
           if user.is_vampire?
+            if user.creator_id == author.user_id
+              return "**You are unable to raise your hand against your creator.**"
+            end
             rnd = rand()
             if rnd > 0.95
               "**As <@#{user_id}> drives a wooden stake through <@#{event.message.mentions.first.id}>'s heart, <@#{event.message.mentions.first.id}> crumbles to dust. <@#{event.message.mentions.first.id}> no longer walks among the undead.**"
@@ -39,7 +43,7 @@ module Bot
       command :donate, description: "Donate some of your precious blood to the blood bank" do |event|
         next if event.channel.id == 83917313761378304
         bank = get_bank
-        user_id = get_user_id event
+        user_id = event.message.author.id
         user = get_user user_id
         rnd = rand()
         bank.update(blood_amount: bank.blood_amount + rnd, donors: bank.donors << user_id)
@@ -52,7 +56,7 @@ module Bot
 
       command :blood, description: "Takes some blood out of the blood bank" do |event|
         next if event.channel.id == 83917313761378304
-        user_id = get_user_id event
+        user_id = event.message.author.id
         user = get_user user_id
         bank = get_bank
         if user.is_vampire?
@@ -69,6 +73,42 @@ module Bot
           end
         else
           "We don't serve blood to the likes of you. Consider donating to our great cause. !!donate"
+        end
+      end
+
+      command :creator, description: "Tells you who created you." do |event|
+        next if event.channel.id == 83917313761378304
+        user_id = get_user_id event
+        user = get_user user_id
+        user.is_vampire? ? "Your recieved the gift of darkness from <@#{user.creator_id}>." : "Your parents."
+      end
+
+      command :vamp, description: "Tells if you are a vampire or not." do |event|
+        next if event.channel.id == 83917313761378304
+        user_id = get_user_id event
+        user = get_user user_id
+        user.is_vampire? ? "You walk among the undead." : "You are not walking among the undead."
+      end
+
+      command :turn, description: "Turns another user into a vampire if you are a vampire. Costs 25 litres of blood." do |event|
+        next if event.channel.id == 83917313761378304
+        user_id = get_user_id event
+        author = get_user event.message.author.id
+        user = get_user user_id
+        if author.is_vampire?
+          if author.blood_amount >= 25
+            if !user.is_vampire?
+              author.update(blood_amount: author.blood_amount - 25)
+              user.update(is_vampire: true, creator_id: event.message.author.id)
+              "**<@#{event.message.author.id}> bites the neck of <@#{user_id}>. After a long period of darkness <@#{user_id}> awakens, fully transformed into a vampire.**"
+            else
+              "**Nothing happenes.**"
+            end
+          else
+            "You do not have enough blood to transform this person."
+          end
+        else
+          "**<@#{user_id}> turns around <@#{user_id}>**"
         end
       end
 
@@ -89,8 +129,10 @@ end
 class Vampire
   include Mongoid::Document
 
-  field :user_id,    type: String
-  field :is_vampire, type: Boolean, default: false
+  field :user_id,       type: String
+  field :creator_id,    type: String, default: nil
+  field :blood_amount,  type: Float, default: 0
+  field :is_vampire,    type: Boolean, default: false
 end
 
 class Bloodbank
