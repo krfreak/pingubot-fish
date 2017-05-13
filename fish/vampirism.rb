@@ -65,7 +65,7 @@ module Bot
             "We're sorry but we ran out of blood. Consider donating some blood to our great cause!"
           else
             rnd = bank.blood_amount
-            "**Takes a blood #{["A", "B", "AB", "O"].sample}#{["+","-"].sample} infusion containing #{rnd} litres of blood and hands it to <@#{user_id}>.**  This was our last reserve! Enjoy!"
+            "**Takes a #{["A", "B", "AB", "O"].sample}#{["+","-"].sample} blood infusion containing #{rnd} litres of blood and hands it to <@#{user_id}>.**  This was our last reserve! Enjoy!"
           end
         else
           "We don't serve blood to the likes of you. Consider donating to our great cause. !!donate"
