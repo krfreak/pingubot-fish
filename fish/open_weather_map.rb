@@ -53,7 +53,7 @@ module Bot
         end
       end
 
-      # protected
+      protected
 
       def OpenWeatherMap::request(location)
         params = {APPID: CFG['open_weather_map_api_key'], q: location}
